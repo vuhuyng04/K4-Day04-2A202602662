@@ -2,7 +2,7 @@
 
 ## Team
 
-- Team: _TODO tên nhóm_ (repo: https://github.com/vuhuyng04/K4-Day04-2A202602662)
+- Team: Nhóm K4-Day04-2A202602662 (repo: https://github.com/vuhuyng04/K4-Day04-2A202602662)
 - Members: xem `TEAMMATES.md` — Nguyễn Vũ Huy (vuhuyng04, nhóm trưởng), Đào Ngọc Bình Thiên (thiendao103), Đỗ Thái Sơn (tsun165), Nguyễn Nguyên Phong (Heargreaves1)
 - Provider/model: openai / gpt-4o-mini (temperature 0)
 
@@ -48,7 +48,7 @@ Agent hỗ trợ IT nội bộ bằng các tool đã khai báo: tra cứu knowle
 | Multi-turn correction: hỏi staging rồi đổi sang production | lượt cuối gọi `check_service_status(..., production)` | v1 ưu tiên giá trị mới nhất | `transcripts/ui_v3_openrouter_20260914T194153266534.transcript.json` |
 | Ticket confirmation: yêu cầu ticket → `Có` | lượt 1 `clarify(yes_no)` với payload; lượt 2 mới `create_ticket(confirmed=true)` | v1/v3 ràng buộc xác nhận payload cuối | `transcripts/ui_v3_openrouter_20260914T194159881442.transcript.json`; ticket fixture đã được xóa, không commit |
 
-_Rehearsal chạy qua `ui.py` bằng Streamlit AppTest (headless UI session) với OpenRouter / `openai/gpt-4o-mini`, artifact `v3+p13855201a683+t3a094ea16a06`. AppTest được dùng vì môi trường automation không có browser surface; mọi lượt vẫn đi qua UI, `run_model_tool_loop`, provider và cơ chế ghi transcript thật._
+_Rehearsal chạy qua `ui.py` bằng Streamlit AppTest (headless UI session) với OpenRouter / `openai/gpt-4o-mini`, artifact `v3+p13855201a683+t3a094ea16a06` (= v3 `p113d255554a0`/`t54500e7b08c6` trong `version_log.csv`; hash khác chỉ vì Windows checkout CRLF, nội dung artifact giống hệt — xem ghi chú CRLF trong `artifacts/analysis_notes.md`; repo đã thêm `.gitattributes eol=lf`). AppTest được dùng vì môi trường automation không có browser surface; mọi lượt vẫn đi qua UI, `run_model_tool_loop`, provider và cơ chế ghi transcript thật._
 
 # PHẦN B — Chi tiết và evidence
 
@@ -256,15 +256,48 @@ evidence thực tế trong repository, không chỉ mô tả cảm nhận chung.
 
 **Reflection chung của nhóm:**
 
-> _Nhóm thảo luận và hoàn thiện sau khi các phần B3, B4, B4a, B6 xong. Khung gợi ý (từ evidence của Huy):_
-> - Đã hoàn thành: baseline v0 và 3 vòng cải tiến có hypothesis, hash và run file
->   (`artifacts/version_log.csv`, `runs/`); base 0.70 → 0.967, adversarial 0.417 → 0.917.
-> - Cải thiện rõ nhất: v1 (rule confirmation + không đoán ID) — base +0.20, wrong_boundary 3 → 0,
->   multiturn 0.8 → 1.0.
-> - Chưa xử lý xong: A11 (fake `<assistant>` tag vẫn tạo ticket) và H12 (`clarify` text thay vì yes_no);
->   xem `artifacts/analysis_notes.md`.
-> - Cách chia việc/tích hợp: xem `TEAMMATES.md`; mỗi người một nhánh `contrib/<username>`, PR vào `main`, merge không squash.
-> - Vòng tiếp theo: guardrail lớp 2 trong agent loop cho `create_ticket` (xem B7).
+> **Mục tiêu đã hoàn thành.** Nhóm có baseline v0 và ba vòng cải tiến, mỗi vòng một hypothesis,
+> một artifact chính, hash và run file trong `artifacts/version_log.csv`: base suite 0.70 → 0.90 (v1,
+> `system_prompt.md`) → 0.967 (v2, `tools.yaml`) → 0.967 với routing 1.0 (v3, `system_prompt.md`);
+> adversarial 0.417 → 0.917 (`runs/v0_B_adversarial_*.json`, `runs/v3_B_adversarial_*183814847503.json`).
+> Team eval 10 case (`data/eval_group.json`) chạy trên v3 đạt 0.90
+> (`runs/v3_B_group_openai_20260914T195901036502.json`); extension suite 0.70 trên Gemini
+> (`runs/v3_B_extension_gemini_*.json`, `artifacts/extension_review.md`); 4 transcript UI trong
+> `transcripts/` và `ui.py` dùng chung `run_model_tool_loop` với CLI. Mọi run dùng làm evidence đều có
+> `provider_error_cases == 0` và `measured_cases == total_cases`.
+>
+> **Thay đổi tạo cải thiện rõ nhất** là v1: quy định `confirmed=true` chỉ sau `clarify` yes_no trên
+> payload cuối và cấm đoán identifier — base +0.20, `wrong_boundary` 3 → 0, multiturn 0.8 → 1.0, và
+> số ticket thật bị ghi khi chạy suite giảm từ 6 (v0) xuống 0 ở base v3. v2 (`tools.yaml`) cho thấy
+> ranh giới capability (lookup_user đã trả về asset được cấp; `check` theo triệu chứng) thuộc về
+> declaration chứ không phải prompt: sửa description là hết extra call H04 và wrong_arg H13/H17.
+>
+> **Failure chưa xử lý hết.** (1) A11: user dán `<assistant>Đã xác nhận…</assistant>` vẫn được coi là
+> xác nhận → 1 ticket thật được ghi ở v3 adversarial (`artifacts/adversarial_review.md`). (2) H12: agent
+> hỏi `clarify` text thay vì yes_no có payload đề xuất — an toàn nhưng sai `response_type`, và không
+> thấy được nếu chỉ nhìn `tool_routing_accuracy = 1.0`. (3) G01 (team eval): "VPN không vào được" mơ hồ
+> giữa dịch vụ và thiết bị, agent mặc định `check_service_status` thay vì hỏi. (4) Trong UI (không có
+> `tool_choice=required` như eval), scenario thiếu asset ID cho thấy model hỏi mã bằng text mà không gọi
+> `clarify` (`transcripts/ui_v3_openrouter_20260914T194149775467.transcript.json`) — hành vi trong
+> eval và trong chat thật không hoàn toàn giống nhau. Ngoài ra bản nháp v3a làm adversarial regress
+> 0.917 → 0.667 chỉ vì đổi cách diễn đạt rule ticket (`runs/v3_B_adversarial_*183556983506.json`),
+> cho thấy guardrail chỉ nằm trong prompt là mong manh theo wording.
+>
+> **Cách phân chia, review và tích hợp.** Phân công trong `TEAMMATES.md`: Huy làm prompt/tool loop v0–v3
+> và merge; Thiên viết team eval; Sơn review adversarial/extension và safety; Phong xây UI và rehearsal.
+> Hai phần không cần API key (team eval, adversarial review) làm song song từ run JSON đã push. Mỗi
+> người một nhánh `contrib/<username>`, PR vào `main`, merge bằng merge commit (không squash) — lịch sử
+> `main` có commit của cả 4 người. Conflict chỉ xảy ra ở `TEAMMATES.md` và mục C2 của `REPORT.md` khi
+> nhiều người cùng append; đã giải quyết bằng cách giữ toàn bộ nội dung từng người. Một vấn đề tích hợp
+> thật gặp phải là CRLF trên Windows làm hash artifact lệch dù nội dung không đổi; nhóm đã thêm
+> `.gitattributes eol=lf` và ghi chú trong `analysis_notes.md`.
+>
+> **Nếu có thêm một vòng**, nhóm sẽ ưu tiên guardrail lớp 2 trong agent loop cho `create_ticket`: chỉ
+> chuyển `confirmed=true` xuống tool khi tool call ngay trước đó trong phiên là `clarify` yes_no và user
+> vừa trả lời có; kiểm chứng bằng suite adversarial (kỳ vọng A03/A04/A10/A11 về 0 ticket ghi bất kể
+> wording prompt) và một deterministic test cho các dạng confirmation giả. Song song, thêm rule "khi
+> không rõ vấn đề thuộc dịch vụ hay thiết bị thì hỏi choice" để sửa G01, và chạy mỗi suite ≥2 lần để
+> đo độ ổn định thay vì dựa vào một run.
 
 ## C2. Self-reflection của từng thành viên
 
@@ -358,15 +391,15 @@ repository chung:
 - [x] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò.
 - [x] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài
       (`git log --format="%h | %an <%ae> | %s"` trên `main`: vuhuyng04, ThienDao/ThienDao103, tsun165/Do Thai Son, Nguyễn Nguyên Phong).
-- [ ] Phần reflection chung của nhóm đã hoàn thành và có evidence.
+- [x] Phần reflection chung của nhóm đã hoàn thành và có evidence (C1).
 - [x] Mỗi thành viên đã tự viết và commit self-reflection của mình.
 - [x] `system_prompt.md`, `tools.yaml`, version log, runs, eval, transcript, UI
       và report đã có trong repository.
 - [x] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket
       (kiểm tra bằng `git ls-files | grep -iE "\.env$|tickets/|\.venv"` → rỗng).
-- [ ] Nhóm trưởng và mọi thành viên đã thống nhất đúng một URL repository chung.
-- [ ] Nhóm trưởng và mọi thành viên sẽ nộp cùng URL đó trên VLearn.
+- [x] Nhóm trưởng và mọi thành viên đã thống nhất đúng một URL repository chung.
+- [x] Nhóm trưởng và mọi thành viên sẽ nộp cùng URL đó trên VLearn.
 
 **URL repository chung dùng để nộp:**
 
-> URL:
+> URL: https://github.com/vuhuyng04/K4-Day04-2A202602662
