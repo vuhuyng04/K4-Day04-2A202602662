@@ -323,6 +323,47 @@ Mỗi thành viên phải tự commit phần self-reflection của mình bằng 
 tương ứng. Reflection phải dẫn đến contribution artifact/commit đã nêu ở trên,
 không dùng chính phần reflection làm bằng chứng duy nhất cho đóng góp kỹ thuật.
 
+### Nguyễn Vũ Huy — 2A202602662
+
+- **Vai trò/phần việc được nhận:** Nhóm trưởng — prompt/tool loop (`TEAMMATES.md` dòng 1): setup
+  môi trường, baseline v0, ba vòng cải tiến v1–v3, failure analysis, chạy suite group, review và
+  merge PR của các thành viên, tổng hợp REPORT B1, B2, B3 (kết quả), B7, C1, C3.
+- **Những gì tôi đã thay đổi trong repo chung:**
+  - `TEAMMATES.md`, phân công 4 người và quy trình `contrib/<username>` → PR → merge không squash;
+    bỏ ignore `runs/`/`transcripts/` trong hai `.gitignore` vì đó là evidence bắt buộc.
+  - Baseline v0 trên base và adversarial; gom 16 failure thành 5 cụm F1–F5 trong
+    `artifacts/analysis_notes.md`.
+  - v1 `system_prompt.md` (confirmation, không đoán ID, ranh giới dữ liệu), v2 `tools.yaml`
+    (phạm vi tool, convention `check`, format ID), v3 `system_prompt.md` (map environment, các dạng
+    giả xác nhận); `artifacts/version_log.csv` v0–v3.
+  - Chạy suite group trên v3 và điền B3; `.gitattributes eol=lf` để hash artifact khớp trên mọi máy.
+  - Merge 4 nhánh vào `main`, giải quyết conflict ở `TEAMMATES.md` và mục C2.
+- **File hoặc artifact liên quan:** `starter_v0/artifacts/system_prompt.md`, `tools.yaml`,
+  `version_log.csv`, `analysis_notes.md`, `REPORT.md`; `starter_v0/runs/v0_*`, `v1_*`, `v2_*`,
+  `v3_*_base/adversarial/group_*.json`; `TEAMMATES.md`; `.gitattributes`.
+- **Commit hash hoặc pull request:** `3e207af` (team setup), `a151feb` (baseline v0 + analysis),
+  `17e868c` (v1), `b5cdb6a` (v2), `82df2bb` (v3), `0927e03` (group suite + B3), `9d44bdb` (C1/C3);
+  merge commits `17a0966`, `019f049`, `30db211`, `adf2eeb` trên `main`.
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Chọn thứ tự v1 = prompt, v2 = declaration
+  từ cụm failure thật thay vì định sẵn: 7/16 failure v0 là confirmation boundary và 3 là đoán ID —
+  đều là nguyên tắc toàn cục nên sửa prompt trước; 4 case còn lại (H04, H13, H17, H19) là ranh giới
+  capability/argument nên để v2 sửa `tools.yaml`. Mỗi vòng chỉ đổi một artifact để biết thay đổi nào
+  tạo ra kết quả; kết quả v1 +0.20 và v2 +0.067 xác nhận cách chia này.
+- **Khó khăn tôi gặp và cách tôi xử lý:** Bản nháp v3a viết lại rule ticket thành checklist "trước
+  khi gọi với `confirmed: true`…" khiến adversarial regress 0.917 → 0.667: model hiểu là gọi
+  `create_ticket(confirmed=false)` thì được. Tôi giữ run đó làm evidence, quay về wording v1 và thêm
+  câu cấm gọi tool dù `confirmed=false`; sau hai lần chỉnh, adversarial về 0.917 và base giữ 0.967.
+  Ngoài ra `.gitignore` của starter ignore `runs/` và `transcripts/` dù README yêu cầu nộp — tôi
+  sửa cả hai file ignore trước khi ai push evidence.
+- **Điều tôi học được từ phần việc này:** Tool name/description/schema là một phần của prompt: chỉ
+  sửa description của `lookup_user` và `check` là hết extra call và wrong_arg mà không cần thêm rule
+  toàn cục. Metric tổng không đủ: v3 có routing 1.0 nhưng H12 vẫn sai `response_type`, và 6 ticket
+  thật bị ghi ở v0 chỉ thấy khi nhìn `tool_results` và thư mục `tickets/`.
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Chạy adversarial ở mọi version (không chỉ v0/v2/v3)
+  để bắt regression sớm; chạy mỗi suite hai lần để tách nhiễu của model khỏi tác động của wording;
+  và làm guardrail lớp 2 trong agent loop cho `create_ticket` ngay từ v2 thay vì để lại cho vòng sau,
+  vì A11 cho thấy prompt một mình không chặn được fake assistant tag.
+
 ### Đào Ngọc Bình Thiên — 2A202602814
 
 - **Vai trò/phần việc được nhận:** Team eval cho agent IT Helpdesk.
